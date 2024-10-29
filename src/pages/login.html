@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Employees</title>
+    <!-- Favicon-->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="../css/styles.css" rel="stylesheet" />
+    <link href="../css/customStyles.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body class="bg-light">
+    <div class="py-3 py-md-5">
+      <div class="container">
+        <div class="row justify-content-md-center">
+          <div class="col-12 col-md-11 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="bg-white p-4 p-md-5 rounded shadow-sm">
+              <div class="row">
+                <div class="col-12">
+                  <div class="mb-5">
+                    <h3>Log in</h3>
+                  </div>
+                </div>
+              </div>
+              <form id="login" action="#">
+                <div class="row gy-3 gy-md-4 overflow-hidden">
+                  <div class="col-12">
+                    <label for="username" class="form-label">Username</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="username"
+                      id="username"
+                      required
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label for="password" class="form-label">Password</label>
+                    <input
+                      type="password"
+                      class="form-control"
+                      name="password"
+                      id="password"
+                      value=""
+                      required
+                    />
+                  </div>
+                  <div class="col-12">
+                    <div class="d-grid">
+                      <button class="btn btn-md btn-dark" type="submit">
+                        Log in
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              <div id="content" class="col-12" hidden></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+
+
+<script>
+  const serverUrl = "http://localhost:3001/api";
+
+  const usernameInput = document.querySelector("#username");
+  const passwordInput = document.querySelector("#password");
+  const form = document.querySelector("#login");
+  const contentDiv = document.querySelector("#content");
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+    form.addEventListener("submit", submitLogin);
+  });
+
+
+  function showMessage(message, type) {
+    const invalidFeedBackMessage = document.querySelector(".feedback-message");
+
+    if (!invalidFeedBackMessage) {
+      if (type === "error") {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("feedback-message");
+        messageDiv.style.color = "red";
+        messageDiv.style.marginTop = "20px";
+        messageDiv.textContent = message;
+        contentDiv.removeAttribute("hidden");
+        contentDiv.appendChild(messageDiv);
+      }
+    }
+  }
+
+  function validateInputs() {
+    if (usernameInput.value.trim() == "" || passwordInput.value.trim() == "") {
+      showMessage("All the fields must have a value", "error");
+      return;
+    }
+    return true;
+  }
+
+async function postLogin() {
+    const loginObject = {
+      username: usernameInput.value,
+      password: passwordInput.value,
+    };
+
+    try {
+      const response = await axios.post(
+        `${serverUrl}/auth/login`,
+        loginObject,
+        { withCredentials: true },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      window.location.href = "./home.html"
+
+    } catch (error) {
+      if (error.response) {
+        console.error(error.response)
+        showMessage(`${error.response.data.message}`, "error");
+      } else if (error.request) {
+        console.error("No response received from server: ", error.request)
+      } else {
+        console.error("Error:", error.message);
+        showMessage("An unexpected error ocurred", "error");
+      }
+    }
+  }
+
+async function submitLogin(e) {
+    e.preventDefault();
+
+    if (!validateInputs()) return;
+
+    await postLogin();
+  }
+</script>

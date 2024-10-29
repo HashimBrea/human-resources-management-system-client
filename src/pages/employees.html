@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Employees</title>
+    <!-- Favicon-->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="../css/styles.css" rel="stylesheet" />
+    <link href="../css/customStyles.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+          <a class="navbar-brand" href="#">Human Resources Management System</a>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="home.html">Home</a>
+              </li>
+              <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Positions</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Salaries</a></li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  id="navbarDropdown"
+                  href="#"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >Dropdown</a>
+                <ul
+                  class="dropdown-menu dropdown-menu-end"
+                  aria-labelledby="navbarDropdown"
+                >
+                  <li><a class="dropdown-item" href="#">Action</a></li>
+                  <li><a class="dropdown-item" href="#">Another action</a></li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <!-- Page content-->
+    <div class="container">
+      <div id="employee-title" class="text-center mt-5 mb-4">
+        <h3><b>Employees</h3></b>
+        <p class="lead">Module to manage employees</p>
+      </div>
+      <div class="row justify-content-md-center hidden">
+        <div class="col-12 col-md-11 col-lg-8 col-xl-7 col-xxl-6">
+          <form id="employee-form" action="#">
+            <div class="row gy-3 gy-md-4 overflow-hidden">
+              <div class="col-12">
+                <label for="firstName" class="form-label">Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="firstName"
+                  id="firstName"
+                  required
+                />
+              </div>
+              <div class="col-12">
+                <label for="text" class="form-label">Last Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="lastName"
+                  id="lastName"
+                  required
+                />
+              </div>
+              <div class="col-12">
+                <label for="text" class="form-label">Identity Number</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="identityNumber"
+                  id="identityNumber"
+                  required
+                />
+              </div>
+              <div class="col-12">
+                <div class="d-grid">
+                  <button class="btn btn-md btn-dark" type="submit">Create</button>
+                </div>
+              </div>
+            </div>
+          </form>
+          <div id="content" class="col-12 mb-3" hidden></div>
+        </div>
+      </div>
+      <div id="employees" hidden class="mt-4">
+        <hr />
+        <div class="justify-content-between align-items-center mb-3">
+          <h3 class="text-center">Table</h3>
+          <form id="search-form" class="d-flex" style="max-width: 200px;">
+            <input class="form-control me-2" type="search" placeholder="ID" aria-label="ID" name="search-bar" id="search-bar">
+            <button id="search-buttom" class="btn btn-outline-secondary" type="button">Search</button>
+          </form>
+          <div id="search-content"></div>        
+        </div>
+        <table id="employees-list" class="table table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Identity Number</th>
+              <th>Position</th>
+              <th class="text-center" id="table-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Bootstrap core JS-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+
+
+<script>
+
+//OJO TERMINAR EDITAR Y DELETE, Y COMO USER NORMAL, NO PUEDO CREAR USUARIOS, HACER BIEN LO DEL MENSAJE DEL SEARCH
+
+const serverUrl = "http://localhost:3001/api";
+
+const firstNameInput = document.querySelector("#firstName");
+const lastNameInput = document.querySelector("#lastName");
+const identityNumberInput = document.querySelector("#identityNumber");
+const employeeForm = document.querySelector("#employee-form");
+const submitButton = employeeForm.querySelector("button[type=submit]");
+const searchForm = document.querySelector("#search-form");
+const searchBar = document.querySelector("#search-bar");
+const searchButtom = document.querySelector("#search-buttom");
+const employeesDiv = document.querySelector("#employes");
+const contentDiv = document.querySelector("#content");
+const searcContentDiv = document.querySelector("#search-content");
+const employeesTableBody = document.querySelector("#employees-list tbody");
+
+let editing = false;
+let user = null;
+
+document.addEventListener("DOMContentLoaded", async () => {  
+  employeeForm.addEventListener("submit", submitEmployee);
+  searchButtom.addEventListener("click", submitSearch);
+  searchBar.addEventListener("input", emptySearchBar)
+
+  user = await getUser();
+
+  employeeFormDisplay();
+
+  const employees = await getEmployees();
+
+  showEmployees(employees);
+
+});
+
+const employeeObject = {
+  firstName: "",
+  lastName: "",
+  identityNumber: ""
+}
+
+async function emptySearchBar(e) {
+  if (e.target.value.trim() == "") {
+    const employees = await getEmployees();
+    showEmployees(employees);
+  }
+}
+
+function employeeFormDisplay() {
+
+const employeeTitle = document.querySelector("#employee-title"); 
+const employeeFormParentDiv = document.querySelector(".justify-content-md-center");
+
+const showContent = user.role.name !== "IT Admin"; 
+
+if (showContent) { 
+  employeeTitle.classList.remove("mb-4"); 
+} else {
+  employeeFormParentDiv.classList.remove("hidden");
+}
+}
+
+function tableActionsDisplay() {
+  const showContent = user.role.name === "IT Admin"; //Y permisos
+
+  const tableActions = document.querySelector("#table-actions");
+
+  if (showContent) {
+      tableActions.style.display = "block";
+  } else {
+      tableActions.style.display = "none";
+  }
+}
+
+function showMessage(message, type) {
+  const feedbackMessage = document.querySelector(".feedback-message");
+
+  if (feedbackMessage) {
+    feedbackMessage.remove();
+    }
+      if (type === "error") {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("feedback-message");
+        messageDiv.style.color = "red";
+        messageDiv.style.marginTop = "20px";
+        messageDiv.textContent = message;
+        contentDiv.removeAttribute("hidden");
+        contentDiv.appendChild(messageDiv);
+      } else if (type === "success") {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("feedback-message")
+        messageDiv.style.color = "green";
+        messageDiv.style.marginTop = "20px";
+        messageDiv.textContent = message;
+        contentDiv.removeAttribute("hidden");
+        contentDiv.appendChild(messageDiv);
+      }
+  }
+
+function validateInputs() {
+    if (firstNameInput.value.trim() == "" || lastNameInput.value.trim() == "" || identityNumberInput.value.trim() == "") {
+      showMessage("All the fields must have a value", "error");
+      return;
+    }
+    return true;
+}
+
+function tableDisplay(employeesLength) {
+    const employeeDiv = document.querySelector("#employees");
+
+    if (employeesLength) {
+      employeeDiv.removeAttribute("hidden");
+    } else {
+      employeeDiv.setAttribute("hidden", "");
+    }
+  }
+
+function clearTable() {
+    while (employeesTableBody.firstChild) {
+      employeesTableBody.removeChild(employeesTableBody.firstChild);
+    }
+}
+
+function showEmployees(employees) {
+  tableDisplay(employees.length);
+
+  tableActionsDisplay();
+
+  clearTable();
+
+  employees.forEach(employee => {
+  const row = document.createElement("tr");
+  
+  const IDCell = document.createElement("td");
+  IDCell.textContent = employee.id;
+  row.appendChild(IDCell);
+
+  const firstNameCell = document.createElement("td");
+  firstNameCell.textContent = employee.firstName;
+  row.appendChild(firstNameCell);
+
+  const lastNameCell = document.createElement("td");
+  lastNameCell.textContent = employee.lastName;
+  row.appendChild(lastNameCell);
+
+  const identityNumberCell = document.createElement("td");
+  identityNumberCell.textContent = employee.identityNumber;
+  row.appendChild(identityNumberCell);
+
+  const positionCell = document.createElement("td");
+  positionCell.textContent = employee.position ? employee.position : "N/A";
+  row.appendChild(positionCell);
+
+  const actionsCell = document.createElement("td");
+
+  const showContent = user.role.name === "IT Admin";
+
+
+if (showContent) {
+  actionsCell.style.display = "block";
+} else {
+  actionsCell.style.display = "none";
+}
+
+    actionsCell.className = "text-center";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "btn btn-dark me-2 btn-md";
+    editButton.setAttribute('data', JSON.stringify(employee));
+    editButton.textContent = "Edit";
+    editButton.onclick = function (e) {
+      updateEmployee(e);
+    }
+    actionsCell.appendChild(editButton);
+    
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "btn btn-dark btn-md";
+    deleteButton.setAttribute('data-id', employee.id);
+    deleteButton.textContent = "Delete";
+    deleteButton.onclick = function(e) {
+      deleteEmployee(e);
+    }
+    actionsCell.appendChild(deleteButton);
+    
+    row.appendChild(actionsCell);
+    
+  employeesTableBody.appendChild(row);
+});
+
+}
+
+async function getUser() {
+  const response = await axios.get(`${serverUrl}/user`, { withCredentials: true });
+
+  const { data: user } = response.data;
+
+  return user;
+
+}
+
+async function getEmployee(employeeId) {
+
+  try {
+const response = await axios.get(`${serverUrl}/employee/${employeeId}`, { withCredentials: true });
+
+const { data: employee } = response.data;
+
+   showEmployees([employee]);
+  } catch(error) {
+ /*    if (error.response) {
+        console.error(error.response)
+        showMessage(`${error.response.data.message}`, "error");
+      } else if (error.request) {
+        console.error("No response received from server: ", error.request)
+      } else {
+        console.error("Error:", error.message);
+        showMessage("An unexpected error ocurred", "error");
+      } */
+  }
+
+ 
+}
+
+async function getEmployees() {
+
+const response = await axios.get(`${serverUrl}/employee`, { withCredentials: true });
+
+const { data: employees } = response.data;
+
+return employees;
+
+}
+
+async function postEmployee() {
+
+   employeeObject.firstName = firstNameInput.value;
+   employeeObject.lastName = lastNameInput.value;
+   employeeObject.identityNumber = identityNumberInput.value;
+
+    try {
+      const response = await axios.post(
+        `${serverUrl}/employee`,
+        employeeObject,
+        { withCredentials: true },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const { data: employee } = response.data; 
+  
+      showMessage(`The employee was created. These are your user credentials: Username: ${employee.user.username} | Password: ${employee.user.password}`, "success");
+      
+      return employee;
+
+    } catch (error) {
+      if (error.response) {
+        console.error(error.response)
+        showMessage(`${error.response.data.message}`, "error");
+      } else if (error.request) {
+        console.error("No response received from server: ", error.request)
+      } else {
+        console.error("Error:", error.message);
+        showMessage("An unexpected error ocurred", "error");
+      }
+      
+      return;
+    }
+  }
+
+async function putEmployee() {
+
+   const employeeId = employeeObject.id;
+   employeeObject.firstName = firstNameInput.value;
+   employeeObject.lastName = lastNameInput.value;
+
+    try {
+      const response = await axios.put(
+        `${serverUrl}/employee/${employeeId}`,
+        employeeObject,
+        { withCredentials: true },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const { data: employee } = response.data; 
+  
+      showMessage(`The employee was updated`, "success");
+      
+      return employee;
+
+    } catch (error) {
+      if (error.response) {
+        console.error(error.response)
+        showMessage(`${error.response.data.message}`, "error");
+      } else if (error.request) {
+        console.error("No response received from server: ", error.request)
+      } else {
+        console.error("Error:", error.message);
+        showMessage("An unexpected error ocurred", "error");
+      }
+      
+      return;
+    }
+}
+
+async function submitEmployee(e) {
+    e.preventDefault();
+
+    if (!validateInputs()) return;
+
+    if (editing) {
+      const updatedEmployee = await putEmployee();
+
+    if (updatedEmployee) {
+
+      submitButton.textContent = "Create";
+
+      const employees = await getEmployees();
+
+      showEmployees(employees);
+
+      resetEmployeeObject();
+
+      employeeForm.reset();
+
+      editing = false;
+    }
+    } else {
+
+    const createdEmployee = await postEmployee();
+
+    if (createdEmployee) {
+
+    resetEmployeeObject();
+
+    employeeForm.reset();
+
+    const employees = await getEmployees();
+
+    showEmployees(employees);
+
+    resetEmployeeObject()
+
+    employeeForm.reset();
+    }
+  }
+
+  }
+
+async function updateEmployee(e) {
+
+  const employeeData = JSON.parse(e.target.getAttribute("data"));
+
+  loadEmployeeDataEditing(employeeData);
+
+}
+
+async function deleteEmployee(e) {
+  const employeeId = JSON.parse(e.target.getAttribute("data-id"));
+
+  await patchEmployee(employeeId); 
+ 
+  if (editing) {
+        if (employeeId == employeeObject.id) {
+
+          submitButton.textContent = "Create";
+
+          editing = false;
+
+          resetEmployeeObject();
+
+          employeeForm.reset();
+        }
+    }
+
+  const employees = await getEmployees();
+
+  showEmployees(employees);
+
+}
+
+async function patchEmployee(employeeId) {
+
+    try {
+      const response = await axios.patch(
+        `${serverUrl}/employee/${employeeId}`,
+        employeeObject,
+        { withCredentials: true },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );  
+      showMessage(`The employee was deleted`, "success");
+    } catch (error) {
+      if (error.response) {
+        console.error(error.response)
+        showMessage(`${error.response.data.message}`, "error");
+      } else if (error.request) {
+        console.error("No response received from server: ", error.request)
+      } else {
+        console.error("Error:", error.message);
+        showMessage("An unexpected error ocurred", "error");
+      }      
+    }
+}
+
+function resetEmployeeObject() {
+  employeeObject.id = "";
+  employeeObject.firstName = "";
+  employeeObject.lastName = "";
+  employeeObject.identityNumber = "";
+}
+
+function loadEmployeeDataEditing(employee) {
+
+  const feedbackMessage = document.querySelector(".feedback-message");
+
+  if (feedbackMessage) {
+    feedbackMessage.remove();
+  }
+
+  firstNameInput.value = employee.firstName;
+  lastNameInput.value = employee.lastName;
+  identityNumberInput.value = employee.identityNumber;
+
+  employeeObject.id = employee.id;
+
+  submitButton.textContent = "Update";
+
+  editing = true;
+}
+
+async function submitSearch(e) {
+    e.preventDefault();
+
+    if (searchBar.value.trim() == "") {
+      return;
+    }
+
+    const employeeID = searchBar.value.trim();
+
+    await getEmployee(employeeID);
+  }
+
+</script>
